@@ -1,0 +1,609 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>WWW.SOMUCH.COM</title>
+
+<style type="text/css"> 
+.chosen
+ {
+	border:4px solid pink;
+ }
+.empty
+{
+	border:2px solid gray;
+}
+.test {font-size:xx-large}
+</style>
+
+<script type="text/javascript">
+function $(id)
+{
+	return document.getElementById(id);
+}
+if (navigator.appName == 'Netscape')
+{
+	document.captureEvents(Event.MOUSEOVER);
+	document.onmouseover = netscapeMouseOver;
+}
+var tmpX = 6;
+function netscapeMouseOver(e)
+{
+	tmpX = e.screenX;
+}
+
+
+//var poksize = "mini";
+var poksize = "huge";
+var prefix = "";
+
+//var pokpattern = "av"; //av default
+var pokpattern = "clean";
+var postfix = "";
+var h;
+var v;
+
+
+//-----public varibles definition
+
+//every single vertical row have one or none series of movable pokers.
+//e.g.:when the game just started,there would be ten movable pokers .every movable series just has one movable poker which is the bottem one. 
+var movables=new Array([10]);
+
+//the varible 'focus' records where the mouse focus is. when the focus="no",there is no focus at any poker. 
+var focus="no";
+
+var zindex = 2;
+//record the poker value for each div .   e.g.: {"2-1":"K","5-2":"9"}
+var mapValues = {};
+var pokStatus = {};
+
+var step = 0;
+var score = 500;
+var player = "";
+var pokers;
+// the order of the group,which is ready to be distributed, in the Five groups! order is :4->3->2->1->0
+var ready_group = 4; 
+
+var full_dragon = 0;
+
+var test_id;
+function test(){
+	alert(test_id);
+	alert("pokStatus[test_id]:"+pokStatus[test_id]);
+	var x = parseInt(test_id.split("-")[0]);
+	var y = parseInt(test_id.split("-")[1]);
+	alert("mapValues["+test_id+"]:"+mapValues[test_id]);
+	alert("movables["+y+"]:"+movables[y]);
+	var everyValues = "从上到下mapValues依次是：\n";
+	
+	for( var o = 0; o <= 50; o++){
+		if ( ! mapValues[o+"-"+y] ) break;
+		everyValues += o +":" + mapValues[o+"-"+y]+"\n";
+	}
+	alert(everyValues);
+}
+function getPlayerName(){
+	var prompt = "Author: So Much  @Copyright: 2010-2020 \n\n";
+	prompt += "****************************************************\n";
+	prompt += "****\t\t\t请 问 阁 下: 尊 姓 大 名\t\t****\n";
+	prompt += "**************************************************** "
+	player = window.prompt(prompt);
+	if ( player == "" || player == null ){
+		player = "匿名大侠";
+	}
+	//$('player').innerHTML = player;
+}
+var browser = "unknown";
+function changeSize(mode){
+	if ( window.confirm("切换模式将会丢失当前的游戏进度，是否继续?")){
+		poksize = mode;
+		begin();
+	}
+}
+function changePattern(pattern){
+	if ( window.confirm("切换扑克图案将会丢失当前的游戏进度，是否继续?")){
+		pokpattern = pattern;
+		begin();
+	}
+} 
+
+function begin(){
+movables=new Array([10]);
+	focus="no";
+	zindex = 2;
+	step = 0;
+	score = 500;
+	ready_group = 4; 
+	full_dragon = 0;
+	mapValues = {};
+	pokStatus = {};
+	prefix = poksize + "_";
+	var toggle_size;
+	if ( poksize == "mini" ){
+		h = 99;
+		v = 20;
+		toggle_size = '<a onclick="{changeSize('+"'normal'"+');}"/>'+'<font color=red style="position:absolute;left:'+4*h+'px;top:1px;font-size:'+Math.floor(v/2+1)+'pt;">切换到正常模式</font></a>';
+	}else{
+		prefix = "";
+		h = 128;
+		v = 30;
+		toggle_size = '<a onclick="changeSize('+"'mini'"+')"/>'+'<font color=red style="position:absolute;left:'+4*h+'px;top:1px;font-size:'+Math.floor(v/2+1)+'pt;">切换到迷你模式</font></a>';
+	}
+	
+	var toggle_pattern;
+	if ( pokpattern == "av" ){
+		postfix = "";
+		toggle_pattern = '<a onclick="{changePattern('+"'clean'"+');}"/>'+'<font color=red style="position:absolute;left:'+6*h+'px;top:1px;font-size:'+Math.floor(v/2+1)+'pt;">隐藏AV视图</font></a>';
+	}else{
+		postfix = "_clean";
+		toggle_pattern = '<a onclick="{changePattern('+"'av'"+');}"/>'+'<font color=red style="position:absolute;left:'+6*h+'px;top:1px;font-size:'+Math.floor(v/2+1)+'pt;">切换AV视图</font></a>';
+	}
+	//getPlayerName();
+	var poker = ["A","2","3","4","5","6","7","8","9","10","J","Q","K","-A","-2","-3","-4","-5","-6","-7","-8","-9","-10","-J","-Q","-K"];
+
+	pokers = poker.concat(poker);
+	pokers = pokers.concat(pokers);
+	for( var i = 0 ; i < 200; i++)
+	{
+		//generate two random numbers between 0 - 51
+		r1 = Math.floor(Math.random(i)*1000)%104;
+		r2 = Math.floor(Math.random(i)*1000)%104;
+		var tmp = pokers[r1];
+		pokers[r1] = pokers[r2];
+		pokers[r2] = tmp;
+	}
+	//pokers=["A","2","3","4","5","6","7","8","9","10",
+	//		"2","3","4","5","6","7","8","9","10","J",
+	//		"3","4","5","6","7","8","9","10","J","Q",
+	//		"4","5","6","7","8","9","10","J","Q","K",
+	//		"5","6","7","8","A","2","A","A","K","A",
+	//		"6","7","8","9","10","J","Q","K","A","2",
+	//		"7","8","9","10","J","Q","K","A","2","3",
+	//		"A","A","A","A","A","A","A","A","A","A",
+	//		"A","A","A","A","A","A","A","A","A","A",
+	//		"5","6","7","8","9","10","J","Q","K","A",
+	//		"K","K","K","K"];
+
+	var score_display = new String('<font style="position:absolute;left:15px;top:1px;font-size:'+Math.floor(v/2+3)+'pt">【统计】&nbsp;得分:&nbsp;'+'<font color=red id=scr>'+score+'</font></font>');
+	var step_display = new String('<font style="position:absolute;left:'+2*h+'px;top:1px;font-size:'+Math.floor(v/2+3)+'pt">走步:&nbsp;'+'<font color=red id=stp>'+step+'</font></font>');
+	var player_display = new String('<font style="position:absolute;left:'+8*h+'px;top:1px;font-size:'+Math.floor(v/2+3)+'pt">玩家:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'+'<font color=red>'+player+'</font></font>');
+	var restart_btn = new String('<img onclick="restart();" style="position:absolute;z-index:500;left:'+4*h+'px;top:'+(18*v+310)+'px;" src="'+prefix+'pic/restart.bmp" />');
+	var bg_img = new String('<div style="position:absolute;z-index:0;left:'+(4*h-330)+'px;top:'+(6*v+15)+'px;"><img src="'+prefix+'pic/somuch-bg.jpg" /></div>');
+	var test_btn = "<input style='position:absolute;z-index:0;left:1000px;top:1000px;' type='button' value='测试ID值' onclick='test()'/>"
+	var music = '<embed src="media/unknown.mp3" loop=true autostart=true name=bgss width="360" height="64" style="position:absolute;z-index:500;left:'+(4*h-100)+'px;top:'+Math.floor(18.5*v+345)+'px;" >'
+	display = new String(score_display+step_display+player_display+restart_btn+bg_img+toggle_size+toggle_pattern+music+test_btn);
+	
+	var x = 2;
+	var y = v;
+	var i = 0;
+	for ( var m = 0;m < 6; m++)
+	{
+		for ( var n = 0; n < 10; n++)
+		{
+			if ( m==5 && n==4 ) break;
+			//arrayObj[m][n] = m+"-"+n;
+			var id = m+"-"+n;
+			mapValues[id] = pokers[i++]
+			if (( m==4&&n>3) || m==5 )
+			{
+				//1 : face-upper poker
+				pokStatus[id] = 1;
+			}else
+			{
+				//0 : back-upper poker
+				pokStatus[id] = 0;
+			}
+			divStr = ['<div id='+id+' onmousedown="{mouseDown(this);}" onmouseup="{how2do(this.id);}"'+' style="position:absolute; z-index:1;left: '+x+'px; top: '+y+'px;">'+'<img src="'+prefix+'pic'+postfix+'/','.jpg" /></div>'];
+			if ( pokStatus[id] == 1)
+			{
+				display = display + divStr[0] + mapValues[id] + divStr[1];
+				// set the upper poker movable
+				movables[n]=[m,m]
+			}
+			if ( pokStatus[id] == 0)
+			{
+				//display = display + divStr[0] + mapValues[id] + divStr[1]; //set all the pokers visible
+				display = display + divStr[0] + "back" + divStr[1];
+			}
+			x = x + h;
+		}
+		x = 2;
+		y = y + v;
+	}
+
+	var pok_in_dark = new String("");
+	var r_x = 8*h //right_x
+	var dark_group = [r_x,r_x-v,r_x-2*v,r_x-3*v,r_x-4*v]; // 
+	var d = dark_group;
+	for ( var d_i = 0; d_i <5; d_i++){
+		pok_in_dark = pok_in_dark + '<div id=d_'+d_i+' onClick="{distribute(this.id)}"'+' style="position:absolute; z-index:600;left:'+d[d_i]+'px;top:'+(15*v+350)+'px;"><img src="'+prefix+'pic/back.jpg" /></div>';
+	}
+
+	var pok_warehouse = new String("");
+	var w_x = 2 //left_x
+	var warehouse_group = [w_x,w_x+v,w_x+2*v,w_x+3*v,w_x+4*v,w_x+5*v,w_x+6*v,w_x+7*v];
+	var w = warehouse_group;
+	for ( var w_i = 0; w_i < 8; w_i++ ){
+		pok_warehouse = pok_warehouse + '<div id=w_'+w_i+' style="position:absolute; z-index:601;left:'+w[w_i]+'px;top:'+(15*v+350)+'px;"><img src="'+prefix+'pic/somuch.jpg" /></div>';
+	}
+	
+	display = display + pok_in_dark + pok_warehouse;
+	refresh(display);
+	//$('body').innerHTML += '<div onclick="{nextImg();}" id="reward" style="position:absolute;z-index:1000;left:'+(6*h-330)+'px;top:'+(4*v+15)+'px;"><img src="reward/1.png" /></div>';
+
+}
+window.onload=begin;
+
+function distribute(id){
+	if(	focus != "no"){
+		$(focus).className="";
+		focus == "no";
+	}
+	var order_in_groups = parseInt(id.split("_")[1]);
+	if ( order_in_groups == ready_group ){
+		// distribute this group
+
+		for ( var i = 0;i < 10; i++ )
+		{
+			if ( mapValues["0-"+i] == "absent" ){
+				alert("有空列时不能发牌");
+				exit;
+			}
+		}
+
+		var new_id = "";
+		var new_value = "";
+		for ( var i = 0;i < 10; i++ )
+		{
+			var m = movables[i][1];
+			new_id = (m+1)+"-"+i;
+			new_value = pokers[54+(4-order_in_groups)*10+i];
+
+			createNewDiv(new_id,new_value);
+			if ( ifCanConnect(mapValues[new_id],mapValues[m+"-"+i])&& ifTheSameColor(mapValues[new_id],mapValues[m+"-"+i]) ){
+				movables[i][1]++;
+				if ( movables[i][1] - movables[i][0] >= 12 ){
+					// K-Q-J-10-……-3-2-A appears 
+					fullDragonHandler((m-11)+"-"+i);
+				}
+			}else{
+				m++;
+				movables[i] = [m,m];
+			}
+		}
+		
+		//$('body').removeChild($(id));
+		//var tmp = "d_"+(4-parseInt(id.split("_")[1]));
+		var z = $(id).style.zIndex;
+		$(id).style.zIndex = z - (parseInt(id.split("_")[1])+1)*5;
+		$(id).innerHTML='<img src="'+prefix+'pic/somuch.jpg" />';
+		ready_group--;
+	}
+	for(var i = 0 ; i<10; i++){
+		//alert(movables[i]);
+	}
+}
+function refresh(display){
+	$('body').innerHTML=display;
+}
+
+
+function restart(){
+	if ( window.confirm("Are You Sure To Restart This Game?")){
+		begin();
+	}
+}
+
+function ifTheSameColor(pok1,pok2){
+	return pok1.indexOf("-")-pok2.indexOf("-")==0;
+}
+function ifCanConnect(from,dest){
+	pokerVal={'A':1,'2':2,'3':3,'4':4,'5':5,'6':6,'7':7,'8':8,'9':9,'10':10,'J':11,'Q':12,'K':13,'-A':-1,'-2':-2,'-3':-3,'-4':-4,'-5':-5,'-6':-6,'-7':-7,'-8':-8,'-9':-9,'-10':-10,'-J':-11,'-Q':-12,'-K':-13};
+	if ( Math.abs(pokerVal[dest]) - Math.abs(pokerVal[from]) == 1){
+		return true;
+	}
+	return false;
+}
+
+function afterMovingMe(my_id){
+		//var coordinate = ;
+		var my_x = parseInt(my_id.split("-")[0]);
+		var my_y = parseInt(my_id.split("-")[1]);
+		//get the id of the poker which just came to the surface.
+		inner_id =(my_x-1)+"-"+my_y;
+		if ( pokStatus[inner_id] == 0 ){
+			// meet the back-upper poker
+			pokStatus[inner_id] = 1;
+			$(inner_id).innerHTML='<img src="'+prefix+'pic'+postfix+'/'+mapValues[inner_id]+'.jpg" />';
+			movables[my_y]=[my_x-1,my_x-1];
+		}else {
+		//change the movables value change to the pokers which came to the surface
+			var movable_len = 1;	
+			for ( var i = my_x-2; i >= 0; i--) {
+				var cur_id = i+"-"+my_y;
+
+				if ( pokStatus[cur_id] == 0 ) break;
+				var beneath_id = (i+1)+"-"+my_y;
+
+				if ( ifCanConnect(mapValues[beneath_id],mapValues[cur_id]) && ifTheSameColor(mapValues[beneath_id],mapValues[cur_id])){
+					movable_len++;	
+				}else{
+					break;  //Very Important! as soon as unconnectable appears, break !!!!
+				}
+			}	
+			movables[my_y] = [my_x-movable_len,my_x-1];
+		}
+			
+}
+
+function createNewDiv(id,value){
+	var x = parseInt(id.split("-")[0]);
+	var y = parseInt(id.split("-")[1]);
+	var newDiv = document.createElement('div');
+	newDiv.id = id;
+	//newDiv.setAttribute("onmouseup","how2do(this.id)");
+	newDiv.onmouseup=function(){how2do(this.id);};
+	//newDiv.onmousedown="mouseDown(this)";
+	//newDiv.setAttribute("onmousedown","mouseDown(this)");
+	newDiv.onmousedown=function(){mouseDown(this)};
+	newDiv.style.position = 'absolute';
+	newDiv.style.left = h*y+2;
+	newDiv.style.top = v*(x+1);
+	newDiv.style.zIndex = zindex++;
+	newDiv.innerHTML = '<img src="'+prefix+'pic'+postfix+'/'+value+'.jpg" />';
+	mapValues[newDiv.id] = value;
+	pokStatus[newDiv.id] = 1;
+	$('body').appendChild(newDiv);
+}
+function moveIt(from,dest,destIsClean){
+	// from & dest is id ,not Element
+
+	var f_x = parseInt(from.split("-")[0]);
+	var f_y = parseInt(from.split("-")[1]);
+	var dragon = movables[f_y];//
+	var d_x = parseInt(dest.split("-")[0]);
+	var d_y = parseInt(dest.split("-")[1]);
+	
+	fromValue = mapValues[from];
+	if( destIsClean ){
+		//delete the background image
+		$('body').removeChild($(dest));
+		toCoverValue = "empty"
+	}else{
+		toCoverValue = mapValues[(d_x-1)+"-"+d_y];
+	}
+		
+	//not move all the vertical row.there would pokers left after the moving
+	for( var i = f_x; i <= dragon[1]; i++){
+		//add new pokers to 'dest' row
+		var obj_id = i+"-"+f_y;
+		createNewDiv(d_x+++'-'+d_y,mapValues[obj_id]);
+		//d_x++;
+
+		//remove pokers which moved to the 'dest' row, from 'from' row .
+		if ( f_x > 0 || i > 0){
+			//keep the last div ,delete pokers under 'from'
+			mapValues[obj_id]="";
+			$('body').removeChild($(obj_id));
+			//pokStatus[obj_id] = 2; //no poker
+		}
+	}
+	if ( destIsClean ){
+		movables[d_y][1]=movables[d_y][1]+(dragon[1]-f_x+1);
+		movables[d_y][0] = 0;
+	}else if ( ifTheSameColor(fromValue,toCoverValue) ){
+		movables[d_y][1]=movables[d_y][1]+(dragon[1]-f_x+1);
+	}else{
+		movables[d_y] = [movables[d_y][1]+1,movables[d_y][1]+dragon[1]-dragon[0]+1];
+	}
+	//if ( movables[d_y][0] == -1 ){
+	//	movables[d_y][0] = 0;
+	//}
+
+	if ( f_x == 0 )  {	
+		//move all the vertical row. there is no poker left in this vertical row, cover the last div.
+		changeTheLastPokerToBackgroundPoker(from);
+	}else{
+		afterMovingMe(from);
+	}
+	focus="no";
+
+	// dragon appears
+	if ( movables[d_y][1]-movables[d_y][0] >= 12 ){
+
+		id_of_K = (movables[d_y][1]-12)+"-"+d_y;
+		// K,Q,J,10,……,4,3,2,A
+		fullDragonHandler(id_of_K);
+	}
+	$("scr").innerHTML=--score;
+	$("stp").innerHTML=++step;	
+}
+
+function fullDragonHandler(K_id){
+
+		// K,Q,J,10,……,4,3,2,A
+		//id_of_K = (movables[y][1]-12)+"-"+y;
+		var K_x = parseInt(K_id.split("-")[0]);
+		var K_y = parseInt(K_id.split("-")[1]);
+		var K_val = mapValues[K_id];
+		if ( K_val != "K" && K_val != "-K"){
+			alert("程序出错，一条龙出现，但最上面的不是K，请检查！下面将给出一些有帮助的状态值，请记录！");
+			alert("K_value:"+K_val);
+			alert("K_id:"+K_id+"; movables["+K_y+"]:"+movables[K_y]+";");
+			var everyValues = "从上到下mapValues依次是：\n";
+			for( var o = 0; o <= K_x+12; o++){
+				everyValues += o +":" + mapValues[o+"-"+K_y]+"\n";
+			}
+			alert(everyValues);
+		}
+		
+		for (var i = K_x; i <= K_x+12; i++)
+		{
+			del_id = i+"-"+K_y;
+			if ( K_x == 0 && i == 0 ){
+				//K is the first poker in the whole row,and this is just the step in loop handling the K poker : Keep it!
+			}else{
+				$('body').removeChild($(del_id));
+			}
+		}
+
+		if ( K_x == 0 ){
+			//if no poker under "K"
+			changeTheLastPokerToBackgroundPoker(K_id);
+		}else {
+			//if poker exists under "K"
+			afterMovingMe(K_id);
+		}
+		score = score + 100;
+		$("scr").innerHTML=score;
+		var ware_house_id = 7 - full_dragon++;
+		$('w_'+ware_house_id).innerHTML='<img src="'+prefix+'pic'+postfix+'/'+K_val+'.jpg" />'
+		if ( full_dragon == 8 ){
+			// you WIN !
+			alert( "\t恭喜您！你得分："+score+"\n点击图片可欣赏全系列高清AV女优图");
+			playAV();
+		}
+}
+	
+var av = 1;
+function playAV(){
+	av = 1;
+	$('body').innerHTML += '<div onclick="nextImg()" id="reward" style="position:absolute;z-index:1000;left:'+(6*h-330)+'px;top:'+(4*v+15)+'px;"><img src="reward/1.jpg" /></div>';
+}
+function nextImg(){
+	$('reward').innerHTML='<img src="reward/'+(++av)+'.jpg" />';
+	if ( av == 54 ) {
+		av = 0;
+	}
+}
+function changeTheLastPokerToBackgroundPoker(last_poker_id){
+	$(last_poker_id).innerHTML='<img src="'+prefix+'pic/somuch.jpg" />';
+	movables[parseInt(last_poker_id.split("-")[1])] = [-1,-1];
+	mapValues[last_poker_id] = "absent";
+}
+
+function setFocus(id){
+	focus = id;
+	$(focus).className="chosen";
+}
+
+function killFocus(){
+	if (focus != "no") {
+		$(focus).className="";
+		focus="no";
+	}
+}
+
+function how2do(id){
+	var pre_focus = focus;
+	var m = parseInt(id.split("-")[0]);
+	var n = parseInt(id.split("-")[1]);
+
+	//click at the movable area
+	if ( m >= movables[n][0] && m <= movables[n][1] ){
+		if ( pre_focus == "no" ){
+			setFocus(id);
+		}else{
+			$(pre_focus).className="";			
+			var to_create_id = (movables[n][1]+1)+"-"+n;
+			if( ifCanConnect(mapValues[pre_focus],mapValues[movables[n][1]+"-"+n])){
+				moveIt(pre_focus,to_create_id,false);
+			}else{
+				setFocus(id);
+			}
+		}
+	}else if ( mapValues[id] == "absent" ){
+		//click the empty vertical line
+		if ( pre_focus == "no" ) {
+			//do nothing!
+		}else{
+			$(pre_focus).className="";
+			moveIt(pre_focus,id,true);
+		}
+	}else {
+		killFocus();
+	}
+	cleanPullVar();
+}
+
+var mouse_down = false;
+var pull_value = "";
+var obj_copy = null;
+function mouseUp(){
+	//if( event.button == 1 || event.button == 0 ){
+		mouse_down = false;
+	//}
+}
+
+function removable(id){
+	var m = parseInt(id.split("-")[0]);
+	var n = parseInt(id.split("-")[1]);
+	var pre_focus = focus;
+	//click at the movable area
+	if ( m >= movables[n][0] && m <= movables[n][1] ){
+		return true;
+	}
+	return false;
+}
+
+function setPullVar(obj){
+	mouse_down = true;
+	obj.id.className = "chosen";
+	obj_copy = obj;
+	pull_value = mapValues[obj.id];
+}
+
+function cleanPullVar(){
+	mouse_down = false;
+	obj_copy = null;
+	pull_value = "";
+}
+function mouseDown(obj){
+	mouse_down = true;
+//	if ( event.button == 1 || event.button == 0) {
+		if(removable(obj.id)){
+			//killFocus()
+			if(	focus != "no" ){
+				$(focus).className = "";
+			}
+			setPullVar(obj);
+		}
+//	}
+
+}
+function pull(e){
+	if ( mouse_down ) {
+		var x;
+		if(window.event){
+			x = window.event.x;
+		}else{
+			x = tmpX;
+		}
+		dest_x = Math.floor((x-2)/h);
+		if(dest_x>=0 && dest_x <=9){
+			dest_value = mapValues[movables[dest_x][1]+"-"+dest_x];
+			if (movables[dest_x][1] == -1) {
+				moveIt(obj_copy.id,"0-"+dest_x,true);
+			}
+			if (ifCanConnect( pull_value , dest_value)){
+				moveIt(obj_copy.id,(movables[dest_x][1]+1)+"-"+dest_x,false);
+				//ifTheSameColor(pull_value , dest_value);
+			}
+
+		}
+	}
+	if(obj_copy!=null){
+		obj_copy.className = "";
+	}
+	cleanPullVar();
+
+}
+
+</script>
+<meta http-equiv="X-UA-Compatible" content="IE=EmulateIE7" />
+</head>
+<body id="body" onMouseOver="if(mouse_down){pull()}" onMouseUp="mouseUp()" STYLE="BACKGROUND-COLOR:#22b14c;">
+<!--<body id="body" onMouseOver="if(mouse_down){pull()}" onMouseUp="mouseUp()" STYLE="BACKGROUND-COLOR:#80947b;">-->
+
+</body>
+</html>
